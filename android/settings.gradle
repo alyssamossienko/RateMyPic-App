@@ -1,0 +1,3 @@
+rootProject.name = 'RateMyPic'
+
+include ':app'

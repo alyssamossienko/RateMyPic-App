@@ -1,0 +1,56 @@
+{
+  "_from": "react-native-fontawesome",
+  "_id": "react-native-fontawesome@5.7.0",
+  "_inBundle": false,
+  "_integrity": "sha1-e/5XwhxlItBeryBkdJA8Pymb/A0=",
+  "_location": "/react-native-fontawesome",
+  "_phantomChildren": {},
+  "_requested": {
+    "type": "tag",
+    "registry": true,
+    "raw": "react-native-fontawesome",
+    "name": "react-native-fontawesome",
+    "escapedName": "react-native-fontawesome",
+    "rawSpec": "",
+    "saveSpec": null,
+    "fetchSpec": "latest"
+  },
+  "_requiredBy": [
+    "#USER",
+    "/"
+  ],
+  "_resolved": "https://registry.npmjs.org/react-native-fontawesome/-/react-native-fontawesome-5.7.0.tgz",
+  "_shasum": "7bfe57c21c6522d05eaf206474903c3f299bfc0d",
+  "_spec": "react-native-fontawesome",
+  "_where": "/Users/channyxchanny/src/RateMyPic",
+  "author": {
+    "name": "Rafael Turk"
+  },
+  "bugs": {
+    "url": "https://github.com/rturk/react-native-fontawesome/issues"
+  },
+  "bundleDependencies": false,
+  "deprecated": false,
+  "description": "Font Awesome Icons for React Native",
+  "homepage": "https://github.com/rturk/react-native-fontawesome",
+  "keywords": [
+    "awesome",
+    "component",
+    "font",
+    "font-awesome",
+    "fontawesome",
+    "icon",
+    "react-native"
+  ],
+  "license": "MIT",
+  "main": "Icon.js",
+  "name": "react-native-fontawesome",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rturk/react-native-fontawesome.git"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "version": "5.7.0"
+}
