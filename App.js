@@ -11,8 +11,33 @@ import {
   Button,
   TouchableHighlight,
   AsyncStorage,
+  TouchableOpacity,
 } from 'react-native';
 import uuidv4 from 'uuid/v4';
+import { RNCamera } from 'react-native-camera';
+
+// Client ID: 1f2a899264e5316
+// Client secret: e16951885731d1bda9f569614540147b93272c87
+// uploadtoAPi(base64) {
+//   let url = 'https://api.imgur.com/3/image';
+//   let headers = {
+//     'Accept': 'application/json',
+//     'Content-Type': 'application/json',
+//     'Authorization': 'Client-ID 1f2a899264e5316'
+//   };
+//   let params = {
+//     image: base64,
+//   };
+//
+//     ImageUploader.uploadtoServer(url, headers, params).then((response)  => {
+//       //response
+//     }).catch((error) => {
+//       //error
+//     })
+// }
+
+
+
 
 class Api {
   constructor() {
@@ -45,6 +70,7 @@ class Api {
   async getUserFeed() {
     let user = await this.getUser();
   }
+
 
   async submitPicture() {
     let user = await this.getUser();
@@ -127,11 +153,49 @@ export default class App extends Component<Props> {
     </View>);
   }
 
+  async takePicture() {
+    if (this.camera) {
+      const options = { quality: 0.5, base64: true };
+      const data = await this.camera.takePictureAsync(options);
+      // alert(data.uri);
+      this.state.items.unshift({key: uuidv4(), image: data.uri, title: 'test'});
+      // alert(JSON.stringify(this.state.items));
+      this.setState(this.state);
+      // this.forceUpdate();
+    }
+  }
+
+  renderCamera() {
+    let {width, height} = Dimensions.get('window');
+    return (
+      <View style={{width: width, height: 200, backgroundColor: 'black'}}>
+        <RNCamera
+            ref={ref => {
+              this.camera = ref;
+            }}
+            style={styles.preview}
+            type={RNCamera.Constants.Type.back}
+            flashMode={RNCamera.Constants.FlashMode.on}
+            permissionDialogTitle={'Permission to use camera'}
+            permissionDialogMessage={'We need your permission to use your camera phone'}
+        />
+        <View style={{flex: 1, flexDirection: 'column', justifyContent: 'flex-end'}}>
+          <TouchableOpacity
+              onPress={this.takePicture.bind(this)}
+              style = {styles.capture}
+          >
+          <Text style={{fontSize: 14}}> SNAP </Text>
+          </TouchableOpacity>
+        </View>
+      </View>);
+  }
+
   render() {
     _keyExtractor = (item, index) => item.key;
 
     return (
       <View style={styles.container}>
+        {this.renderCamera()}
         <Image
           source={require('./img/logo.png')}
           style={{width: 220,height: 90, marginTop:10, marginBottom:10}}
@@ -170,7 +234,7 @@ export default class App extends Component<Props> {
           />
         </TouchableHighlight>
         </View>
-              </View>
+      </View>
     );
   }
 }
@@ -196,4 +260,18 @@ const styles = StyleSheet.create({
     color: '#333333',
     marginBottom: 5,
   },
+  preview: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    alignItems: 'center'
+  },
+  capture: {
+    flex: 0,
+    backgroundColor: '#fff',
+    borderRadius: 5,
+    padding: 15,
+    paddingHorizontal: 20,
+    alignSelf: 'center',
+    margin: 20
+  }
 });
