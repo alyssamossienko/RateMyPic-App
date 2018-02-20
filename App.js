@@ -58,21 +58,26 @@ export default class App extends Component<Props> {
     super(props);
 
     this.state = {};
-    this.state.items = [
-      {key: '1', title: 'Channy', uri: 'https://i.imgur.com/kW235lC.jpg'},
-      {key: '2', title: 'Betty', uri: 'https://i.pinimg.com/564x/64/ed/fb/64edfb55564fdba7ef12d7b6343e6b22.jpg'},
-      {key: '3', title: 'Elizabeth', uri: 'https://i.pinimg.com/564x/c4/1f/10/c41f10a9e852c1bc8a48f2096ddc3502.jpg'}
-    ];
+    this.state.items = [];
+    this.api = new Api();
+    this.loadFeed();
   }
 
-  async testApi() {
-    let api = new Api();
-    alert(JSON.stringify(await api.getUser()));
+  async loadFeed() {
+    let feed = await this.api.getFeed();
+    // alert(JSON.stringify(feed));
+    let key = 0;
+    feed = feed.map(p => {
+      key += 1;
+      p.key = key.toString();
+      return p;
+    });
+
+    this.setState({items: feed});
   }
 
   onPressLike() {
     Alert.alert('You think it is a good pic, liked!', '');
-    this.testApi();
   }
 
   onPressDislike() {
@@ -88,7 +93,7 @@ export default class App extends Component<Props> {
         <Text style={{fontSize: 30, fontWeight: '600', fontFamily: 'Courier New' }}>{item.title}</Text>
         <Image
           style={{width: width - 80, height: 400, marginBottom: 20}}
-          source={{uri: item.uri}}
+          source={{uri: item.image}}
         />
         <View
           style={{
