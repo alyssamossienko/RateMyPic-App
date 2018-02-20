@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import uuidv4 from 'uuid/v4';
 import { RNCamera } from 'react-native-camera';
+import RNFS from 'react-native-fs';
 
 // Client ID: 1f2a899264e5316
 // Client secret: e16951885731d1bda9f569614540147b93272c87
@@ -72,8 +73,21 @@ class Api {
   }
 
 
-  async submitPicture() {
+  async submitPicture(title, image) {
     let user = await this.getUser();
+    let response = await fetch(this.baseUri + '/picture', {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        user: user,
+        title: title,
+        image: image,
+      }),
+    });
+    let responseJson = await response.json();
   }
 }
 
@@ -153,15 +167,30 @@ export default class App extends Component<Props> {
     </View>);
   }
 
+  async uploadtoImgur(base64) {
+    let response = await fetch('https://api.imgur.com/3/image', {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        'Authorization': 'Client-ID 1f2a899264e5316'
+      },
+      body: JSON.stringify({
+        image: base64,
+      }),
+    });
+    let responseJson = await response.json();
+    return responseJson.data.link;
+  }
+
   async takePicture() {
     if (this.camera) {
       const options = { quality: 0.5, base64: true };
       const data = await this.camera.takePictureAsync(options);
-      // alert(data.uri);
-      this.state.items.unshift({key: uuidv4(), image: data.uri, title: 'test'});
-      // alert(JSON.stringify(this.state.items));
-      this.setState(this.state);
-      // this.forceUpdate();
+      const base64image = await RNFS.readFile(data.uri, 'base64');
+      let link = await this.uploadtoImgur(base64image);
+      await this.api.submitPicture('Chaanny', link);
+      this.loadFeed();
     }
   }
 
