@@ -16,29 +16,7 @@ import {
 import uuidv4 from 'uuid/v4';
 import { RNCamera } from 'react-native-camera';
 import RNFS from 'react-native-fs';
-
-// Client ID: 1f2a899264e5316
-// Client secret: e16951885731d1bda9f569614540147b93272c87
-// uploadtoAPi(base64) {
-//   let url = 'https://api.imgur.com/3/image';
-//   let headers = {
-//     'Accept': 'application/json',
-//     'Content-Type': 'application/json',
-//     'Authorization': 'Client-ID 1f2a899264e5316'
-//   };
-//   let params = {
-//     image: base64,
-//   };
-//
-//     ImageUploader.uploadtoServer(url, headers, params).then((response)  => {
-//       //response
-//     }).catch((error) => {
-//       //error
-//     })
-// }
-
-
-
+import CameraRollPicker from 'react-native-camera-roll-picker';
 
 class Api {
   constructor() {
@@ -70,8 +48,13 @@ class Api {
 
   async getUserFeed() {
     let user = await this.getUser();
-  }
 
+    let response = await fetch(
+      this.baseUri + '/userFeed?user=' + user,
+    );
+    let responseJson = await response.json();
+    return responseJson.posts;
+  }
 
   async submitPicture(title, image) {
     let user = await this.getUser();
@@ -85,6 +68,23 @@ class Api {
         user: user,
         title: title,
         image: image,
+      }),
+    });
+    let responseJson = await response.json();
+  }
+
+  async ratePicture(user, title, image, isLike) {
+    let response = await fetch(this.baseUri + '/rate', {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        user: user,
+        title: title,
+        image: image,
+        isLike: isLike ? "true" : "false",
       }),
     });
     let responseJson = await response.json();
@@ -103,8 +103,8 @@ export default class App extends Component<Props> {
     this.loadFeed();
   }
 
-  async loadFeed() {
-    let feed = await this.api.getFeed();
+  async loadFeed(opt = {user: false}) {
+    let feed = opt.user ? await this.api.getUserFeed() : await this.api.getFeed();
     // alert(JSON.stringify(feed));
     let key = 0;
     feed = feed.map(p => {
@@ -116,17 +116,20 @@ export default class App extends Component<Props> {
     this.setState({items: feed});
   }
 
-  onPressLike() {
-    Alert.alert('You think it is a good pic, liked!', '');
+  async onPressLike(item) {
+    // Alert.alert('You think it is a good pic, liked!', '');
+    await this.api.ratePicture(item.user, item.title, item.image, true);
+    this.loadFeed();
   }
 
-  onPressDislike() {
-    Alert.alert('dislike', '');
+  async onPressDislike(item) {
+    // Alert.alert('dislike', '');
+    await this.api.ratePicture(item.user, item.title, item.image, false);
+    this.loadFeed();
   }
 
   _renderItem({item}) {
     let {width, height} = Dimensions.get('window');
-
     return (
       <View
         style={{flex: 1, width: width, justifyContent: 'center', alignItems: 'center'}}>
@@ -135,6 +138,7 @@ export default class App extends Component<Props> {
           style={{width: width - 80, height: 400, marginBottom: 20}}
           source={{uri: item.image}}
         />
+        <Text style={{fontSize: 20, fontWeight: '600', fontFamily: 'Courier New' }}>{item.dislikes || 0} | {item.likes || 0}</Text>
         <View
           style={{
             width: width,
@@ -144,7 +148,7 @@ export default class App extends Component<Props> {
             marginTop: -50,
             marginBottom: 10}}>
           <TouchableHighlight
-            onPress={this.onPressDislike.bind(this)}
+            onPress={this.onPressDislike.bind(this, item)}
             activeOpacity={0.6}
             underlayColor={'transparent'}
             style={{marginLeft: 20}}>
@@ -154,7 +158,7 @@ export default class App extends Component<Props> {
             />
           </TouchableHighlight>
           <TouchableHighlight
-            onPress={this.onPressLike.bind(this)}
+            onPress={this.onPressLike.bind(this, item)}
             activeOpacity={0.6}
             underlayColor={'transparent'}
             style={{marginRight: 20}}>
@@ -184,6 +188,7 @@ export default class App extends Component<Props> {
   }
 
   async takePicture() {
+    this.setState({showCamera: false});
     if (this.camera) {
       const options = { quality: 0.5, base64: true };
       const data = await this.camera.takePictureAsync(options);
@@ -194,10 +199,38 @@ export default class App extends Component<Props> {
     }
   }
 
+  async exitPicture() {
+    this.setState({showCamera: false});
+  }
+
+  async getSelectedImages(images, current) {
+    this.setState({showCameraPicker: false});
+    let temp = RNFS.DocumentDirectoryPath + '/rate-my-pic-img';
+    await RNFS.writeFile(temp, '');
+    await RNFS.copyAssetsFileIOS(current.uri, temp, 0, 0);
+    const base64image = await RNFS.readFile(temp, 'base64');
+    let link = await this.uploadtoImgur(base64image);
+    await this.api.submitPicture('Chaanny', link);
+    this.loadFeed();
+  }
+
+  renderCameraPicker() {
+    let {width, height} = Dimensions.get('window');
+
+    return (
+      <View style={{width: width, height: height - 90}}>
+        <CameraRollPicker
+          maximum={1}
+          selectSingleItem={true}
+          callback={this.getSelectedImages.bind(this)} />
+      </View>
+    );
+  }
+
   renderCamera() {
     let {width, height} = Dimensions.get('window');
     return (
-      <View style={{width: width, height: 200, backgroundColor: 'black'}}>
+      <View style={{width: width, height: height - 90, backgroundColor: 'black'}}>
         <RNCamera
             ref={ref => {
               this.camera = ref;
@@ -213,7 +246,13 @@ export default class App extends Component<Props> {
               onPress={this.takePicture.bind(this)}
               style = {styles.capture}
           >
-          <Text style={{fontSize: 14}}> SNAP </Text>
+            <Text style={{fontSize: 14}}> SNAP </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+              onPress={this.exitPicture.bind(this)}
+              style = {styles.capture}
+          >
+            <Text style={{fontSize: 14}}> EXIT </Text>
           </TouchableOpacity>
         </View>
       </View>);
@@ -224,11 +263,12 @@ export default class App extends Component<Props> {
 
     return (
       <View style={styles.container}>
-        {this.renderCamera()}
         <Image
           source={require('./img/logo.png')}
           style={{width: 220,height: 90, marginTop:10, marginBottom:10}}
            />
+        {this.state.showCamera ? this.renderCamera() : undefined}
+        {this.state.showCameraPicker ? this.renderCameraPicker() : undefined}
         <FlatList
           data={this.state.items}
           keyExtractor={this._keyExtractor}
@@ -238,7 +278,9 @@ export default class App extends Component<Props> {
         <TouchableHighlight
           activeOpacity={0.6}
           underlayColor={'transparent'}
+          onPress={() => this.setState({showCamera: true})}
           style={{marginLeft: 10, marginBottom:20, marginTop:20}}>
+
           <Image
             source={require('./img/camera.png')}
             style={{width: 40, height: 40}}
@@ -247,6 +289,7 @@ export default class App extends Component<Props> {
         <TouchableHighlight
           activeOpacity={0.6}
           underlayColor={'transparent'}
+          onPress={() => this.setState({showCameraPicker: true})}
           style={{marginLeft: 10, marginBottom:20, marginTop:20}}>
           <Image
             source={require('./img/add-outline.png')}
@@ -256,6 +299,7 @@ export default class App extends Component<Props> {
         <TouchableHighlight
           activeOpacity={0.6}
           underlayColor={'transparent'}
+          onPress={() => this.loadFeed({user: true})}
           style={{marginLeft: 10, marginBottom:20, marginTop:20}}>
           <Image
             source={require('./img/user-solid-square.png')}

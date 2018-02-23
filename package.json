@@ -12,6 +12,7 @@
     "react": "16.2.0",
     "react-native": "0.53.0",
     "react-native-camera": "^1.0.1",
+    "react-native-camera-roll-picker": "^1.2.3",
     "react-native-fontawesome": "^5.7.0",
     "react-native-fs": "^2.9.10",
     "uuid": "^3.2.1"
